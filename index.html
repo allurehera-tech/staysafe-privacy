@@ -11,6 +11,8 @@
     body { margin: 0; background: var(--surface); color: var(--ink); font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif; }
     header { background: #0c1825; color: #fff; padding: 42px 20px 34px; }
     .wrap { max-width: 880px; margin: 0 auto; }
+    .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+    .brand h1 { margin: 0; }
     h1 { margin: 0 0 8px; font-size: clamp(2rem, 5vw, 3rem); line-height: 1.15; }
     header p { margin: 0; color: #d2dce7; }
     nav { display: flex; flex-wrap: wrap; gap: 10px; margin: 24px 0; }
@@ -31,7 +33,7 @@
 <body>
   <header>
     <div class="wrap">
-      <h1>Stay Safe</h1>
+      <div class="brand"><img src="logo.svg" width="54" height="54" alt=""><h1>Stay Safe</h1></div>
       <p>Politica de confidențialitate, informații GDPR și termeni de utilizare</p>
       <p class="small">Ultima actualizare: 6 noiembrie 2026</p>
     </div>
@@ -98,7 +100,7 @@
     <aside class="controller" id="controller" aria-labelledby="controller-heading">
       <h2 id="controller-heading">Operator de date / Data controller</h2>
       <p><strong>Toma Adina</strong><br>Strada Soldanului nr. 8<br>Cod poștal 042046, Sector 4<br>București, România</p>
-      <p>Email: <a href="mailto:adinayoma365@gmail.com">adinayoma365@gmail.com</a></p>
+      <p>Email: <a href="mailto:adinatoma365@gmail.com">adinatoma365@gmail.com</a></p>
       <p class="small">Pentru solicitări privind datele personale, folosește adresa de email de mai sus. / For personal-data requests, use the email address above.</p>
     </aside>
   </main>
