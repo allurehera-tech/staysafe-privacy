@@ -65,7 +65,7 @@ jobs:
                           .edit().putBoolean("emergency_start_failed", true).apply()
                   }
               }"""
-          s, count = re.subn(r"^        fun triggerEmergency\(context: android\\.content\\.Context\) \{.*?^        \}", new_trigger, s, count=1, flags=re.S | re.M)
+          s, count = re.subn(r"^        fun triggerEmergency\(context: android\.content\.Context\) \{.*?^        \}", new_trigger, s, count=1, flags=re.S | re.M)
           assert count == 1, "Could not patch triggerEmergency implementation"
 
           new_ringtone = """    private fun startRingtone() {
