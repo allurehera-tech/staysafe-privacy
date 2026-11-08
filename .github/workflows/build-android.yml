@@ -50,6 +50,63 @@ jobs:
           assert old in s, "Could not find onServiceConnected implementation"
           service.write_text(s.replace(old, new, 1))
 
+          alarm = root / "app/src/main/java/ro/staysafe/app/AlarmService.kt"
+          s = alarm.read_text()
+          old_trigger = '''        fun triggerEmergency(context: android.content.Context) {
+                  val instance = runningInstance
+                  if (instance != null) {
+                      instance.triggerEmergency()
+                      return
+                  }
+                  val intent = Intent(context, AlarmService::class.java).setAction(ACTION_EMERGENCY)
+                  try {
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(intent)
+                      else context.startService(intent)
+                  } catch (_: RuntimeException) {
+                      // The app's setup screen can be reopened to re-arm the foreground service.
+                  }
+              }'''
+          new_trigger = '''        fun triggerEmergency(context: android.content.Context) {
+                  val appContext = context.applicationContext
+                  val intent = Intent(appContext, AlarmService::class.java).setAction(ACTION_EMERGENCY)
+                  try {
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) appContext.startForegroundService(intent)
+                      else appContext.startService(intent)
+                  } catch (e: RuntimeException) {
+                      android.util.Log.e("StaySafe", "Could not start emergency foreground service", e)
+                      appContext.getSharedPreferences(MainActivity.PREFS, android.content.Context.MODE_PRIVATE)
+                          .edit().putBoolean("emergency_start_failed", true).apply()
+                  }
+              }'''
+          assert old_trigger in s, "Could not find triggerEmergency implementation"
+          s = s.replace(old_trigger, new_trigger, 1)
+          s = s.replace('''        val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                  ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+              ringtone = RingtoneManager.getRingtone(applicationContext, alarmUri)?.apply {''', '''        val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                  ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+                  ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+              try {
+                  ringtone = alarmUri?.let { RingtoneManager.getRingtone(applicationContext, it) }?.apply {''', 1)
+          s = s.replace('''                  play()
+              }
+          }
+
+          private fun dispatchEmergencySms()''', '''                  play()
+                  }
+              } catch (e: RuntimeException) {
+                  android.util.Log.e("StaySafe", "Could not play alarm ringtone", e)
+                  ringtone = null
+              }
+          }
+
+          private fun dispatchEmergencySms()''', 1)
+          alarm.write_text(s)
+
+          # Bump the test build version so Android installs it as an update.
+          app_gradle = root / "app/build.gradle.kts"
+          s = app_gradle.read_text().replace("versionCode = 1", "versionCode = 3").replace('versionName = "1.2"', 'versionName = "1.4"')
+          app_gradle.write_text(s)
+
           app_gradle = root / "app/build.gradle.kts"
           s = app_gradle.read_text()
           s = s.replace("compileSdk = 35", "compileSdk = 36")
