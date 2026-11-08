@@ -24,6 +24,34 @@ jobs:
           base64 --decode .build-input/StaySafe-Android.zip.b64 > "$RUNNER_TEMP/staysafe.zip"
           unzip -q "$RUNNER_TEMP/staysafe.zip" -d android-project
 
+      - name: Enable runtime volume-key filtering
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android-project/app/src/main/java/ro/staysafe/app/StaySafeAccessibilityService.kt")
+          s = p.read_text()
+          old_import = "import android.accessibilityservice.AccessibilityService\n"
+          new_import = old_import + "import android.accessibilityservice.AccessibilityServiceInfo\n"
+          if "import android.accessibilityservice.AccessibilityServiceInfo" not in s:
+              assert old_import in s, "Could not find AccessibilityService import"
+              s = s.replace(old_import, new_import, 1)
+          old = """    override fun onServiceConnected() {
+              super.onServiceConnected()
+              activeInstance = this
+          }"""
+          new = """    override fun onServiceConnected() {
+              super.onServiceConnected()
+              // Some Android/OEM builds need the key-filter flag explicitly applied at runtime.
+              serviceInfo = serviceInfo.apply {
+                  flags = flags or AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS
+              }
+              activeInstance = this
+          }"""
+          assert old in s, "Could not find onServiceConnected implementation"
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+          PY
+
       - name: Set up Java 17
         uses: actions/setup-java@v5
         with:
