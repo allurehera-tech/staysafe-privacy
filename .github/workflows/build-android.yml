@@ -124,42 +124,42 @@ jobs:
               anchor = "    private fun showHome() {\n"
               assert anchor in s, "Could not find showHome insertion point"
               methods = """    /** Request runtime permissions only after explicit consent. This does not arm SOS;
-       * contacts and special Android settings must still be configured by the user.
-       */
-      private fun maybeStartFirstLaunchFlow() {
-          val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
-          if (prefs.getBoolean(KEY_FIRST_LAUNCH_FLOW_SHOWN, false)) return
-          AlertDialog.Builder(this)
+              * contacts and special Android settings must still be configured by the user.
+              */
+              private fun maybeStartFirstLaunchFlow() {
+              val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+              if (prefs.getBoolean(KEY_FIRST_LAUNCH_FLOW_SHOWN, false)) return
+              AlertDialog.Builder(this)
               .setTitle(strings.get("disclosureTitle"))
               .setMessage(strings.get("disclosure") + "\\n\\n" + strings.get("intro"))
               .setPositiveButton(strings.get("agree")) { _, _ ->
-                  prefs.edit().putBoolean(KEY_FIRST_LAUNCH_FLOW_SHOWN, true).apply()
-                  requestFirstLaunchRuntimePermissions()
+              prefs.edit().putBoolean(KEY_FIRST_LAUNCH_FLOW_SHOWN, true).apply()
+              requestFirstLaunchRuntimePermissions()
               }
               .setNegativeButton(strings.get("cancel")) { _, _ ->
-                  prefs.edit().putBoolean(KEY_FIRST_LAUNCH_FLOW_SHOWN, true).apply()
+              prefs.edit().putBoolean(KEY_FIRST_LAUNCH_FLOW_SHOWN, true).apply()
               }
               .setOnCancelListener {
-                  prefs.edit().putBoolean(KEY_FIRST_LAUNCH_FLOW_SHOWN, true).apply()
+              prefs.edit().putBoolean(KEY_FIRST_LAUNCH_FLOW_SHOWN, true).apply()
               }
               .show()
-      }
-
-      private fun requestFirstLaunchRuntimePermissions() {
-          val required = mutableListOf(
+              }
+              
+              private fun requestFirstLaunchRuntimePermissions() {
+              val required = mutableListOf(
               Manifest.permission.SEND_SMS,
               Manifest.permission.ACCESS_FINE_LOCATION,
               Manifest.permission.ACCESS_COARSE_LOCATION
-          )
-          if (Build.VERSION.SDK_INT >= 33) required += Manifest.permission.POST_NOTIFICATIONS
-          val missing = required.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
-          if (missing.isEmpty()) return
-          firstLaunchPermissionFlow = true
-          waitingForRuntimePermissions = true
-          requestPermissions(missing.toTypedArray(), REQUEST_PERMISSIONS)
-      }
-
-  """
+              )
+              if (Build.VERSION.SDK_INT >= 33) required += Manifest.permission.POST_NOTIFICATIONS
+              val missing = required.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
+              if (missing.isEmpty()) return
+              firstLaunchPermissionFlow = true
+              waitingForRuntimePermissions = true
+              requestPermissions(missing.toTypedArray(), REQUEST_PERMISSIONS)
+              }
+              
+          """
               s = s.replace(anchor, methods + anchor, 1)
           if "KEY_FIRST_LAUNCH_FLOW_SHOWN" not in s:
               anchor = '        const val KEY_LANGUAGE = "language"\n'
