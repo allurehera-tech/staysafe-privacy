@@ -96,6 +96,77 @@ jobs:
           s = s[:start] + new_ringtone + s[end:]
           alarm.write_text(s)
 
+          # Add first-launch runtime permission onboarding after explicit disclosure consent.
+          main = root / "app/src/main/java/ro/staysafe/app/MainActivity.kt"
+          s = main.read_text()
+          if "private var firstLaunchPermissionFlow = false" not in s:
+              anchor = "    private var batteryAsked = false\n"
+              assert anchor in s, "Could not find MainActivity state declarations"
+              s = s.replace(anchor, anchor + "    private var firstLaunchPermissionFlow = false\n", 1)
+          if "maybeStartFirstLaunchFlow()" not in s:
+              anchor = "        showHome()\n"
+              assert anchor in s, "Could not find MainActivity onCreate"
+              s = s.replace(anchor, anchor + "        maybeStartFirstLaunchFlow()\n", 1)
+          if "if (firstLaunchPermissionFlow)" not in s:
+              anchor = "            waitingForRuntimePermissions = false\n"
+              assert anchor in s, "Could not find runtime permission callback"
+              callback = """            if (firstLaunchPermissionFlow) {
+                          firstLaunchPermissionFlow = false
+                          val smsGranted = checkSelfPermission(Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED
+                          val locationGranted = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                              checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                          if (!smsGranted || !locationGranted) toast(strings.get("permissionsMissing"))
+                          return
+                      }
+          """
+              s = s.replace(anchor, anchor + callback, 1)
+          if "private fun maybeStartFirstLaunchFlow()" not in s:
+              anchor = "    private fun showHome() {\n"
+              assert anchor in s, "Could not find showHome insertion point"
+              methods = """    /** Request runtime permissions only after explicit consent. This does not arm SOS;
+       * contacts and special Android settings must still be configured by the user.
+       */
+      private fun maybeStartFirstLaunchFlow() {
+          val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+          if (prefs.getBoolean(KEY_FIRST_LAUNCH_FLOW_SHOWN, false)) return
+          AlertDialog.Builder(this)
+              .setTitle(strings.get("disclosureTitle"))
+              .setMessage(strings.get("disclosure") + "\\n\\n" + strings.get("intro"))
+              .setPositiveButton(strings.get("agree")) { _, _ ->
+                  prefs.edit().putBoolean(KEY_FIRST_LAUNCH_FLOW_SHOWN, true).apply()
+                  requestFirstLaunchRuntimePermissions()
+              }
+              .setNegativeButton(strings.get("cancel")) { _, _ ->
+                  prefs.edit().putBoolean(KEY_FIRST_LAUNCH_FLOW_SHOWN, true).apply()
+              }
+              .setOnCancelListener {
+                  prefs.edit().putBoolean(KEY_FIRST_LAUNCH_FLOW_SHOWN, true).apply()
+              }
+              .show()
+      }
+
+      private fun requestFirstLaunchRuntimePermissions() {
+          val required = mutableListOf(
+              Manifest.permission.SEND_SMS,
+              Manifest.permission.ACCESS_FINE_LOCATION,
+              Manifest.permission.ACCESS_COARSE_LOCATION
+          )
+          if (Build.VERSION.SDK_INT >= 33) required += Manifest.permission.POST_NOTIFICATIONS
+          val missing = required.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
+          if (missing.isEmpty()) return
+          firstLaunchPermissionFlow = true
+          waitingForRuntimePermissions = true
+          requestPermissions(missing.toTypedArray(), REQUEST_PERMISSIONS)
+      }
+
+  """
+              s = s.replace(anchor, methods + anchor, 1)
+          if "KEY_FIRST_LAUNCH_FLOW_SHOWN" not in s:
+              anchor = '        const val KEY_LANGUAGE = "language"\n'
+              assert anchor in s, "Could not find preference constants"
+              s = s.replace(anchor, anchor + '        private const val KEY_FIRST_LAUNCH_FLOW_SHOWN = "first_launch_permission_flow_shown"\n', 1)
+          main.write_text(s)
+
           # Bump the test build version so Android installs it as an update.
           app_gradle = root / "app/build.gradle.kts"
           s = app_gradle.read_text().replace("versionCode = 1", "versionCode = 3").replace('versionName = "1.2"', 'versionName = "1.4"')
