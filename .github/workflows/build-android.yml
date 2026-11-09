@@ -100,7 +100,7 @@ jobs:
           main = root / "app/src/main/java/ro/staysafe/app/MainActivity.kt"
           s = main.read_text()
           if "private var firstLaunchPermissionFlow = false" not in s:
-              anchor = "    private var batteryAsked = false\n"
+              anchor = "    private var waitingForRuntimePermissions = false\n"
               assert anchor in s, "Could not find MainActivity state declarations"
               s = s.replace(anchor, anchor + "    private var firstLaunchPermissionFlow = false\n", 1)
           if "maybeStartFirstLaunchFlow()" not in s:
@@ -162,7 +162,7 @@ jobs:
           """
               s = s.replace(anchor, methods + anchor, 1)
           if "KEY_FIRST_LAUNCH_FLOW_SHOWN" not in s:
-              anchor = '        const val KEY_LANGUAGE = "language"\n'
+              anchor = '        const val PREFS = "stay_safe_settings"\n'
               assert anchor in s, "Could not find preference constants"
               s = s.replace(anchor, anchor + '        private const val KEY_FIRST_LAUNCH_FLOW_SHOWN = "first_launch_permission_flow_shown"\n', 1)
           main.write_text(s)
