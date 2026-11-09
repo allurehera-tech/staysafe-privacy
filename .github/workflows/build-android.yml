@@ -161,7 +161,7 @@ jobs:
               
           """
               s = s.replace(anchor, methods + anchor, 1)
-          if "KEY_FIRST_LAUNCH_FLOW_SHOWN" not in s:
+          if "private const val KEY_FIRST_LAUNCH_FLOW_SHOWN" not in s:
               anchor = '        const val PREFS = "stay_safe_settings"\n'
               assert anchor in s, "Could not find preference constants"
               s = s.replace(anchor, anchor + '        private const val KEY_FIRST_LAUNCH_FLOW_SHOWN = "first_launch_permission_flow_shown"\n', 1)
